@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: flight-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: flight_info
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - flight-network
+  redis:
+    image: redis:7-alpine
+    container_name: flight-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - flight-network
+
+networks:
+  flight-network:
+    external: true
+    name: nacos_flight-network

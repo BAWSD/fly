@@ -1,0 +1,174 @@
+@use './variables.scss' as *;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: $font-family-base;
+  background-color: $bg-color;
+  color: $text-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+}
+
+// Modern card styling
+.el-card {
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow 0.3s ease, transform 0.2s ease !important;
+
+  &:hover {
+    box-shadow: var(--shadow-md) !important;
+  }
+}
+
+.el-card__header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid $border-color !important;
+  font-weight: 600;
+  font-size: 14px;
+  color: $text-primary;
+}
+
+.el-card__body {
+  padding: 20px !important;
+}
+
+// Modern button styling
+.el-button--primary {
+  background: linear-gradient(135deg, $primary-color, $primary-light) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  color: #ffffff !important;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($primary-color, 0.4) !important;
+  }
+}
+
+.el-button--primary.is-link {
+  color: #409EFF !important;
+  background: transparent !important;
+  &:hover {
+    color: #66b1ff !important;
+  }
+}
+
+.el-button--primary.is-text {
+  color: #409EFF !important;
+}
+
+.el-button--default {
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+  }
+}
+
+// Modern tag styling
+.el-tag {
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+// Modern input styling
+.el-input__wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 1px $border-color inset !important;
+  transition: box-shadow 0.3s ease !important;
+
+  &:hover {
+    box-shadow: 0 0 0 1px $primary-color inset !important;
+  }
+
+  &.is-focus {
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.3) inset !important;
+  }
+}
+
+// Modern checkbox & radio
+.el-checkbox__inner {
+  border-radius: 4px !important;
+}
+
+.el-radio__inner {
+  border-radius: 50% !important;
+}
+
+.el-checkbox.is-checked .el-checkbox__inner,
+.el-radio.is-checked .el-radio__inner {
+  background-color: $primary-color !important;
+  border-color: $primary-color !important;
+}
+
+// Modern scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c9d4;
+  border-radius: 3px;
+
+  &:hover {
+    background: #a0a8b7;
+  }
+}
+
+// Tab styling
+.el-tabs__item {
+  font-weight: 500 !important;
+  transition: color 0.3s ease !important;
+
+  &.is-active {
+    color: $primary-color !important;
+  }
+}
+
+.el-tabs__active-bar {
+  background-color: $primary-color !important;
+}
+
+// Card header common style
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  span {
+    font-weight: 600;
+    font-size: 15px;
+    color: $text-primary;
+  }
+}
+
+// Transition
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

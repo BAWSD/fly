@@ -1,0 +1,461 @@
+1. flight-info-service 配置
+Data ID: flight-info-service-dev.yaml
+Group: DEFAULT_GROUP
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: flight-info-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/flight_info?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,log4j2
+      use-global-data-source-stat: true
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        weight: 1.0
+        ephemeral: true
+        enabled: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      update-strategy: not_null
+      insert-strategy: not_null
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.university.flight.info.entity
+
+# 日志配置
+logging:
+  level:
+    com.university.flight.info: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+  file:
+    name: logs/flight-info-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+
+# 服务配置
+flight:
+  info:
+    cache:
+      expire-seconds: 300
+      max-size: 1000
+    schedule:
+      sync-interval: 60000
+
+2. flight-status-service 配置
+Data ID: flight-status-service-dev.yaml
+Group: DEFAULT_GROUP
+
+server:
+  port: 8082
+  servlet:
+    context-path: /
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 20
+    accept-count: 100
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+spring:
+  application:
+    name: flight-status-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/flight_status?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        metadata:
+          version: 1.0.0
+          owner: flight-team
+  # WebSocket 配置
+  websocket:
+    stomp:
+      broker-relay:
+        relay-host: localhost
+        relay-port: 61613
+        client-login: guest
+        client-passcode: guest
+        system-login: guest
+        system-passcode: guest
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.university.flight.status.entity
+
+# WebSocket STOMP 配置
+flight:
+  websocket:
+    endpoint: /ws-flight
+    allowed-origins: "*"
+    simple-broker: /topic
+    application-destination-prefix: /app
+    heartbeat:
+      client: 10000
+      server: 10000
+  status:
+    update-interval: 10000
+    simulation:
+      enabled: true
+      lat-variation: 0.01
+      lon-variation: 0.01
+      speed-range: 400-600
+      altitude-range: 30000-40000
+
+# 日志配置
+logging:
+  level:
+    com.university.flight.status: INFO
+    org.springframework.web.socket: DEBUG
+    org.springframework.messaging: DEBUG
+  file:
+    name: logs/flight-status-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+3. api-gateway 配置
+Data ID: api-gateway-dev.yaml
+Group: DEFAULT_GROUP
+
+server:
+  port: 8080
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 20
+    accept-count: 100
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        metadata:
+          version: 1.0.0
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # 航班信息服务路由
+        - id: flight-info-service
+          uri: lb://flight-info-service
+          predicates:
+            - Path=/api/flight/info/**
+            - Method=GET,POST,PUT,DELETE
+          filters:
+            - StripPrefix=1
+            - name: Hystrix
+              args:
+                name: flightInfoFallback
+                fallbackUri: forward:/fallback/flight-info
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@ipKeyResolver}"
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+                methods: GET,POST
+                series: SERVER_ERROR
+        # 航班状态服务路由
+        - id: flight-status-service
+          uri: lb://flight-status-service
+          predicates:
+            - Path=/api/flight/status/**,/ws-flight/**
+            - Method=GET,POST,PUT,WS
+          filters:
+            - StripPrefix=1
+        # 航班状态WebSocket路由
+        - id: flight-status-websocket
+          uri: lb:ws://flight-status-service
+          predicates:
+            - Path=/ws-flight/**
+          filters:
+            - SetPath=/ws-flight
+      # 全局跨域配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+      # 全局过滤器
+      default-filters:
+        - AddRequestHeader=X-Request-Source,gateway
+        - AddResponseHeader=X-Response-Time,${spring.cloud.gateway.metrics.tags.response-time}
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 30s
+        pool:
+          type: elastic
+          max-idle-time: 30000
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: 10000
+      shutdown-timeout: 2000
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+
+# 熔断器配置
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 10000
+      circuitBreaker:
+        requestVolumeThreshold: 20
+        errorThresholdPercentage: 50
+        sleepWindowInMilliseconds: 5000
+      metrics:
+        rollingStats:
+          timeInMilliseconds: 10000
+          numBuckets: 10
+
+# 请求限流配置
+resilience4j:
+  ratelimiter:
+    instances:
+      flightInfoService:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 0
+        allow-health-indicator-to-fail: true
+        subscribe-for-events: true
+        event-consumer-buffer-size: 50
+  circuitbreaker:
+    instances:
+      flightInfoService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+
+# 链路追踪配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    reactor.netty: INFO
+  file:
+    name: logs/api-gateway.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+4. 全局共享配置
+Data ID: flight-common-dev.yaml
+Group: DEFAULT_GROUP
+配置格式: YAML
+
+# 微服务通用配置
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+  messages:
+    encoding: UTF-8
+  resources:
+    static-locations: classpath:/static/,classpath:/public/,file:./static/
+
+# Redis 配置 (如果使用)
+redis:
+  host: localhost
+  port: 6379
+  password: 
+  database: 0
+  timeout: 3000
+  jedis:
+    pool:
+      max-active: 8
+      max-idle: 8
+      min-idle: 0
+      max-wait: 1000
+
+# 安全配置
+security:
+  jwt:
+    secret: flight-tracking-platform-2026-secret-key-for-jwt-token-generation
+    expiration: 86400000
+    header: Authorization
+    prefix: Bearer
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+# Swagger 配置
+swagger:
+  enable: true
+  application-name: ${spring.application.name}
+  application-version: 1.0.0
+  application-description: 智能航班信息与应急处理平台 API文档
+  try-host: http://localhost:${server.port}
+
+# 线程池配置
+thread-pool:
+  core:
+    core-pool-size: 10
+    max-pool-size: 50
+    queue-capacity: 100
+    keep-alive-seconds: 60
+  schedule:
+    core-pool-size: 5
+  async:
+    core-pool-size: 20
+    max-pool-size: 100
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    thread-name-prefix: async-thread-
+
+# 缓存配置
+cache:
+  type: caffeine
+  caffeine:
+    spec: maximumSize=1000,expireAfterAccess=600s
+  redis:
+    time-to-live: 3600s
+    cache-null-values: false
+    key-prefix: flight:
+
+# 业务配置
+flight:
+  system:
+    version: 1.0.0
+    name: 智能航班信息与应急处理平台
+    author: 毕业设计项目组
+    email: flight@university.edu.cn
+  api:
+    version: v1
+    prefix: /api
+  timezone: Asia/Shanghai
+  date-format: yyyy-MM-dd HH:mm:ss

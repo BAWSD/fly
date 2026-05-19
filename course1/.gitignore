@@ -1,0 +1,95 @@
+# ====================
+# IDE / Editor Files
+# ====================
+# Keep .idea/ for project sharing, but ignore auto-generated files
+.idea/workspace.xml
+.idea/vcs.xml
+.idea/dataSources.local.xml
+.idea/*.xml.user
+.idea/modules.xml
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
+.idea/sqldialects.xml
+*.iml
+*.iws
+*.swp
+*.swo
+*~
+.vscode/
+.settings/
+.project
+.classpath
+*.sublime-project
+*.sublime-workspace
+
+# ====================
+# OS Files
+# ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+**/*.log
+nohup.out
+*.pid
+*.tmp
+*.bak
+
+# ====================
+# Java / Maven (Backend)
+# ====================
+flight-tracking-platform/**/target/
+flight-tracking-platform/**/target/*
+*.class
+*.jar
+*.war
+*.ear
+*.jar.original
+!flight-tracking-platform/**/pom.xml
+
+# ====================
+# Node.js / Frontend
+# ====================
+flight-tracking-frontend/node_modules/
+flight-tracking-frontend/dist/
+flight-tracking-frontend/.cache/
+flight-tracking-frontend/test-import.mjs
+*.tsbuildinfo
+
+# ====================
+# Python (AI Analysis Service)
+# ====================
+flight-tracking-platform/ai-analysis-service/__pycache__/
+flight-tracking-platform/ai-analysis-service/*.pyc
+flight-tracking-platform/ai-analysis-service/.venv/
+flight-tracking-platform/ai-analysis-service/venv/
+flight-tracking-platform/ai-analysis-service/.env
+
+# ====================
+# Docker / Database Data
+# ====================
+flight-tracking-platform/deploy/mysql-redis/mysql/data/
+flight-tracking-platform/deploy/mysql-redis/redis/data/
+flight-tracking-platform/deploy/nacos/data/
+flight-tracking-platform/deploy/nacos/logs/
+
+# ====================
+# Environment Files
+# ====================
+.env
+.env.local
+.env.*.local
+
+# ====================
+# Misc Build Artifacts
+# ====================
+*.pyc
+__pycache__/
+*.egg-info/
+*.db
+*.sqlite
+*.sqlite3
+tmp/
+temp/
