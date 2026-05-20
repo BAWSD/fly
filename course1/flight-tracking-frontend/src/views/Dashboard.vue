@@ -127,7 +127,7 @@
               </el-button>
             </div>
           </template>
-          <div class="flight-list">
+          <el-scrollbar class="flight-list">
             <div v-if="recentFlights.length === 0" class="empty-list">
               <el-empty description="暂无航班数据" :image-size="80" />
             </div>
@@ -155,47 +155,11 @@
                 </span>
               </div>
             </div>
-          </div>
+          </el-scrollbar>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- Charts Row -->
-    <el-row :gutter="16" class="bottom-row">
-      <el-col :xs="24" :md="8">
-        <AIPredictionCard
-          :flight-number="selectedFlight?.flightNumber"
-          :flight-details="selectedFlight"
-          @refresh="handleRefreshPrediction"
-        />
-      </el-col>
-      <el-col :xs="24" :md="8">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>航班状态分布</span>
-              <el-button size="small" @click="loadFlightStats">
-                <el-icon><Refresh /></el-icon>刷新
-              </el-button>
-            </div>
-          </template>
-          <FlightStatusChart ref="statusChartRef" :stats="flightStats" />
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="8">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>延误趋势分析（近7天）</span>
-              <el-button size="small" @click="loadDelayStats">
-                <el-icon><Refresh /></el-icon>刷新
-              </el-button>
-            </div>
-          </template>
-          <DelayAnalysisChart ref="delayChartRef" :stats="delayStats" />
-        </el-card>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
@@ -204,12 +168,9 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Collection, Aim, Clock, Location, Refresh, Right, Search } from '@element-plus/icons-vue'
-import { flightApi, statusApi } from '@/api'
+import { flightApi } from '@/api'
 import { dateUtils } from '@/utils/date'
 import RealTimeMap from '@/components/map/RealTimeMap.vue'
-import FlightStatusChart from '@/components/charts/FlightStatusChart.vue'
-import DelayAnalysisChart from '@/components/charts/DelayAnalysisChart.vue'
-import AIPredictionCard from '@/components/ai/AIPredictionCard.vue'
 
 const router = useRouter()
 
@@ -222,15 +183,10 @@ const stats = ref({
 
 const recentFlights = ref([])
 const selectedFlight = ref(null)
-const flightStats = ref({})
-const delayStats = ref({})
-
 const realTimeMapRef = ref()
-const statusChartRef = ref()
-const delayChartRef = ref()
 
 // Map controls state
-const mapStatusFilter = ref(['SCHEDULED', 'IN_AIR', 'DEPARTED'])
+const mapStatusFilter = ref(['IN_AIR'])
 const showFlightPath = ref(true)
 const showAirports = ref(true)
 const mapStyle = ref('normal')
@@ -246,14 +202,12 @@ const statusOptions = [
 
 const loadDashboardData = async () => {
   try {
-    const [statsRes, recentRes, delayStatsRes] = await Promise.all([
+    const [statsRes, recentRes] = await Promise.all([
       flightApi.getFlightStats(),
-      flightApi.getFlightList({ pageSize: 10 }),
-      statusApi.getDelayStats(7)
+      flightApi.getFlightList({ pageSize: 10 })
     ])
 
     if (statsRes.data) {
-      flightStats.value = statsRes.data
       updateStats(statsRes.data)
     }
 
@@ -264,9 +218,6 @@ const loadDashboardData = async () => {
       }
     }
 
-    if (delayStatsRes.data) {
-      delayStats.value = delayStatsRes.data
-    }
   } catch (error) {
     console.error('加载仪表板数据失败:', error)
     ElMessage.error('加载仪表板数据失败')
@@ -341,34 +292,6 @@ const loadRecentFlights = async () => {
   } catch (error) {
     ElMessage.error('刷新航班列表失败')
   }
-}
-
-const loadFlightStats = async () => {
-  try {
-    const res = await flightApi.getFlightStats()
-    flightStats.value = res.data
-    updateStats(res.data)
-    ElMessage.success('统计信息已刷新')
-  } catch (error) {
-    ElMessage.error('刷新统计信息失败')
-  }
-}
-
-const loadDelayStats = async () => {
-  try {
-    const res = await statusApi.getDelayStats(7)
-    delayStats.value = res.data
-    if (delayChartRef.value?.refresh) {
-      delayChartRef.value.refresh()
-    }
-    ElMessage.success('延误统计已刷新')
-  } catch (error) {
-    ElMessage.error('刷新延误统计失败')
-  }
-}
-
-const handleRefreshPrediction = () => {
-  ElMessage.success('AI预测已刷新')
 }
 
 onMounted(async () => {
@@ -481,7 +404,7 @@ onMounted(async () => {
 
       .flight-list {
         height: calc(100% - 52px);
-        overflow-y: auto;
+        padding-right: 4px;
 
         .empty-list {
           height: 100%;
@@ -546,19 +469,6 @@ onMounted(async () => {
           }
         }
       }
-    }
-  }
-
-  .bottom-row {
-    margin-bottom: 16px;
-
-    .chart-card {
-      height: 420px;
-    }
-
-    :deep(.ai-prediction-card) {
-      height: 420px;
-      overflow: hidden;
     }
   }
 

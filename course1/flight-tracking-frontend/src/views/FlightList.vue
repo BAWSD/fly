@@ -143,10 +143,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="text" size="small" @click="viewDetail(row.flightNumber)" style="color: #409EFF">
               详情
+            </el-button>
+            <el-button type="text" size="small" @click="showOnMap(row.flightNumber)">
+              在地图显示
             </el-button>
             <el-button type="warning" link size="small" @click="handleEdit(row)">
               编辑
@@ -310,6 +313,10 @@ const handleSelectionChange = (selection) => {
 
 const viewDetail = (flightNumber) => {
   router.push({ name: 'FlightDetail', params: { flightNumber } })
+}
+
+const showOnMap = (flightNumber) => {
+  router.push({ name: 'Tracking', query: { flight: flightNumber } })
 }
 
 const handleAdd = () => {

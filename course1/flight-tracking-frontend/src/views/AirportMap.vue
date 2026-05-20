@@ -258,7 +258,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, Setting, Search, Right } from '@element-plus/icons-vue'
 import { flightApi, statusApi } from '@/api'
@@ -266,6 +267,7 @@ import { dateUtils } from '@/utils/date'
 import RealTimeMap from '@/components/map/RealTimeMap.vue'
 import AirportView from '@/components/map/AirportView.vue'
 
+const route = useRoute()
 const realTimeMapRef = ref()
 
 const activeTab = ref('flights')
@@ -526,6 +528,12 @@ onMounted(() => {
   loadFlightData()
   changeRefreshInterval(refreshInterval.value)
 })
+
+watch(() => route.query.flight, (flightNumber) => {
+  if (!flightNumber || !realTimeMapRef.value?.focusFlightOnMap) return
+  realTimeMapRef.value.focusFlightOnMap(flightNumber)
+  activeTab.value = 'flights'
+}, { immediate: true })
 
 onUnmounted(() => {
   clearInterval(refreshTimer)

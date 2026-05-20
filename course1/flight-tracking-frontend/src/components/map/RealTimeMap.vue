@@ -103,8 +103,10 @@ let trafficLayer = null
 const flightMarkers = new Map()
 const airportMarkers = new Map()
 const flightPaths = new Map()
-const selectedStatus = ref(['SCHEDULED', 'IN_AIR', 'DEPARTED'])
+const selectedStatus = ref(['IN_AIR'])
 const selectedFlight = ref(null)
+const focusedFlightNumber = ref('')
+const mapReady = ref(false)
 const showFlightPath = ref(true)
 const showAirports = ref(true)
 const showWeather = ref(false)
@@ -181,6 +183,11 @@ const initMap = async () => {
 
     window.addEventListener('resize', handleResize)
 
+    mapReady.value = true
+    if (focusedFlightNumber.value) {
+      focusFlightOnMap(focusedFlightNumber.value)
+    }
+
     ElMessage.success('地图加载成功')
   } catch (error) {
     console.error('地图加载失败:', error)
@@ -244,7 +251,8 @@ const handleStatusUpdate = (flightData) => {
   }
 }
 
-const addFlightMarker = (flightData) => {
+const addFlightMarker = (flightData, force = false) => {
+  if (!force && !shouldShowFlight(flightData)) return
   if (!flightData.latitude || !flightData.longitude) return
 
   const point = new BMapGL.Point(
@@ -370,6 +378,7 @@ const centerOnFlight = (flightData) => {
 }
 
 const shouldShowFlight = (flight) => {
+  if (focusedFlightNumber.value && flight.flightNumber === focusedFlightNumber.value) return true
   if (!flight.latitude || !flight.longitude) return false
   if (!selectedStatus.value.includes(flight.flightStatus)) return false
   return true
@@ -504,6 +513,24 @@ const changeMapStyle = (style) => {
   }
 }
 
+const focusFlightOnMap = (flightNumber) => {
+  if (!flightNumber) return
+  focusedFlightNumber.value = flightNumber.toUpperCase()
+
+  if (!mapReady.value) {
+    return
+  }
+
+  for (const { data } of flightMarkers.values()) {
+    if (data.flightNumber.includes(focusedFlightNumber.value)) {
+      handleMarkerClick(data)
+      return
+    }
+  }
+
+  searchFlightFromAPI(focusedFlightNumber.value)
+}
+
 const searchFlightOnMap = () => {
   if (!searchFlight.value.trim()) return
 
@@ -514,19 +541,21 @@ const searchFlightOnMap = () => {
     }
   }
 
-  searchFlightFromAPI()
+  searchFlightFromAPI(searchFlight.value)
 }
 
-const searchFlightFromAPI = async () => {
+const searchFlightFromAPI = async (keyword) => {
   try {
-    const res = await flightApi.searchFlights(searchFlight.value)
+    const res = await flightApi.searchFlights(keyword)
     const flights = res.data || []
 
     if (flights.length > 0) {
       const flight = flights[0]
+      focusedFlightNumber.value = flight.flightNumber
+      addFlightMarker(flight, true)
       handleMarkerClick(flight)
     } else {
-      ElMessage.warning(`未找到航班: ${searchFlight.value}`)
+      ElMessage.warning(`未找到航班: ${keyword}`)
     }
   } catch (error) {
     console.error('搜索航班失败:', error)
@@ -628,6 +657,10 @@ const refresh = () => {
     loadAirports()
   }
 
+  if (focusedFlightNumber.value) {
+    focusFlightOnMap(focusedFlightNumber.value)
+  }
+
   ElMessage.success('地图已刷新')
 }
 
@@ -664,6 +697,7 @@ defineExpose({
   refresh,
   centerOnAirport,
   centerOnFlight,
+  focusFlightOnMap,
   toggleWeather,
   toggleTraffic,
   applySettings,
@@ -680,7 +714,7 @@ defineExpose({
         return
       }
     }
-    searchFlightFromAPI()
+    searchFlightFromAPI(searchFlight.value)
   },
   toggle3D: (is3d) => {
     // BaiduMap GL doesn't have a simple "3D toggle", but we can adjust zoom/pitch
