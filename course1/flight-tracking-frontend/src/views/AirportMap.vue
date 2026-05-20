@@ -343,20 +343,16 @@ const filteredFlights = computed(() => {
 
   const keyword = flightFilter.value.toLowerCase()
   return flights.value.filter(flight =>
-    flight.flightNumber.toLowerCase().includes(keyword) ||
-    flight.departureAirportName.toLowerCase().includes(keyword) ||
-    flight.arrivalAirportName.toLowerCase().includes(keyword) ||
-    flight.airlineName.toLowerCase().includes(keyword)
+    (flight.flightNumber || '').toLowerCase().includes(keyword) ||
+    (flight.departureAirportName || '').toLowerCase().includes(keyword) ||
+    (flight.arrivalAirportName || '').toLowerCase().includes(keyword) ||
+    (flight.airlineName || '').toLowerCase().includes(keyword)
   )
 })
 
 const loadFlightData = async () => {
   try {
-    const res = await flightApi.getFlightList({
-      pageSize: 100,
-      startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
-    })
+    const res = await flightApi.getFlightList({ pageSize: 200 })
 
     flights.value = res.data?.records || []
     calculateFlightStats()
@@ -650,6 +646,10 @@ onUnmounted(() => {
       }
 
       .stats-container {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 4px;
+
         .stats-section {
           margin-bottom: 16px;
           padding-bottom: 12px;

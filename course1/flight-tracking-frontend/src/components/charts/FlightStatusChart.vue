@@ -73,28 +73,6 @@ const updateChart = () => {
 
   const totalCount = data.reduce((sum, item) => sum + item.value, 0)
   const option = {
-    title: [
-      {
-        text: props.title,
-        left: 'center',
-        top: 5,
-        textStyle: {
-          fontSize: 14,
-          fontWeight: 'normal'
-        }
-      },
-      {
-        text: '航班总数: ' + totalCount,
-        left: 'center',
-        top: 28,
-        textStyle: {
-          fontSize: 12,
-          fontWeight: 'bold',
-          color: '#333'
-        },
-        subtext: ''
-      }
-    ],
     tooltip: {
       trigger: 'item',
       formatter: '{a} <br/>{b}: {c} ({d}%)'
@@ -103,16 +81,16 @@ const updateChart = () => {
       type: 'scroll',
       orient: 'vertical',
       right: 10,
-      top: 20,
-      bottom: 20,
+      top: 'middle',
+      itemGap: 10,
       data: data.map(item => item.name)
     },
     series: [
       {
         name: '航班状态',
         type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['40%', '50%'],
+        radius: ['44%', '74%'],
+        center: ['38%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,

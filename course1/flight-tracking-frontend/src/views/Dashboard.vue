@@ -438,8 +438,8 @@ onMounted(async () => {
     margin-bottom: 16px;
 
     .control-card {
-      min-height: 500px;
-      height: 500px;
+      min-height: 540px;
+      height: 540px;
 
       .control-body {
         display: flex;
@@ -466,15 +466,22 @@ onMounted(async () => {
     }
 
     .map-card {
-      min-height: 500px;
-      height: 500px;
+      min-height: 540px;
+      height: 540px;
+
+      :deep(.el-card__body) {
+        height: calc(100% - 52px);
+        padding: 0 !important;
+      }
     }
 
     .flight-list-card {
-      min-height: 500px;
-      height: 500px;
+      min-height: 540px;
+      height: 540px;
 
       .flight-list {
+        height: calc(100% - 52px);
+        overflow-y: auto;
 
         .empty-list {
           height: 100%;
@@ -546,7 +553,12 @@ onMounted(async () => {
     margin-bottom: 16px;
 
     .chart-card {
-      height: 300px;
+      height: 420px;
+    }
+
+    :deep(.ai-prediction-card) {
+      height: 420px;
+      overflow: hidden;
     }
   }
 

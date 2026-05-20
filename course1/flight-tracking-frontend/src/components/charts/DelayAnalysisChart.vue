@@ -50,22 +50,24 @@ const updateChart = () => {
     },
     legend: {
       data: ['延误次数', '平均延误时间'],
-      top: 0
+      top: 10,
+      left: 0,
+      itemGap: 18
     },
     grid: {
       left: 50,
       right: 50,
-      top: 40,
-      bottom: 50
+      top: 70,
+      bottom: 55
     },
     dataZoom: [
       { type: 'inside', start: 0, end: 100 },
-      { type: 'slider', start: 0, end: 100, height: 20, bottom: 5 }
+      { type: 'slider', start: 0, end: 100, height: 16, bottom: 12 }
     ],
     xAxis: {
       type: 'category',
       data: shortLabels,
-      axisLabel: { rotate: shortLabels.length > 7 ? 30 : 0, fontSize: 11 }
+      axisLabel: { rotate: shortLabels.length > 7 ? 30 : 0, fontSize: 11, margin: 12 }
     },
     yAxis: [
       {

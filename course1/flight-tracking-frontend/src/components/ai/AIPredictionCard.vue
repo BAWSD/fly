@@ -107,12 +107,6 @@
           </el-button>
           <el-button
             size="small"
-            @click="showDetails"
-          >
-            详细分析
-          </el-button>
-          <el-button
-            size="small"
             @click="sharePrediction"
           >
             分享结果
@@ -151,7 +145,7 @@ const props = defineProps({
   flightDetails: Object
 })
 
-const emit = defineEmits(['refresh', 'show-details'])
+const emit = defineEmits(['refresh'])
 
 const prediction = ref(null)
 const loading = ref(false)
@@ -334,9 +328,6 @@ const refreshPrediction = async () => {
   }
 }
 
-const showDetails = () => {
-  emit('show-details', prediction.value)
-}
 
 const sharePrediction = () => {
   if (!prediction.value) return
@@ -387,6 +378,13 @@ watch(() => props.flightNumber, (newVal) => {
 <style lang="scss" scoped>
 .ai-prediction-card {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-card__body) {
+    flex: 1;
+    overflow-y: auto;
+  }
 
   .card-header {
     display: flex;

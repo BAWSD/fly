@@ -55,15 +55,6 @@ const routes = [
     }
   },
   {
-    path: '/monitor',
-    name: 'Monitor',
-    component: () => import('@/views/SystemMonitor.vue'),
-    meta: {
-      title: '系统监控',
-      icon: 'Monitor'
-    }
-  },
-  {
     path: '/:pathMatch(.*)*',
     redirect: '/dashboard',
     meta: { hidden: true }

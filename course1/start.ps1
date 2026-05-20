@@ -6,8 +6,8 @@ $platform = Join-Path $base "flight-tracking-platform"
 $frontend = Join-Path $base "flight-tracking-frontend"
 
 # Setup Java Environment
-$env:JAVA_HOME = "C:/Users/Administrator/.jdks/openjdk-25.0.1"
-$env:Path = "$env:JAVA_HOME/bin;$env:Path"
+#$env:JAVA_HOME = "C:/Users/Administrator/.jdks/openjdk-25.0.1"
+#$env:Path = "$env:JAVA_HOME/bin;$env:Path"
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
@@ -45,7 +45,13 @@ try {
     if ([int]$count -lt 20) {
         Write-Host "  Initializing database..." -ForegroundColor Gray
         $sqlFile = Join-Path $base "init-db.sql"
-        Get-Content $sqlFile -Encoding UTF8 | docker exec -i flight-mysql mysql -uroot -p123456 --default-character-set=utf8mb4 2>$null
+        $cmd = 'docker exec -i flight-mysql mysql -uroot -p123456 --default-character-set=utf8mb4 < "' + $sqlFile + '"'
+        cmd /c $cmd 2>$null
+        $trackSql = Join-Path $base "track-data.sql"
+        if (Test-Path $trackSql) {
+            $trackCmd = 'docker exec -i flight-mysql mysql -uroot -p123456 --default-character-set=utf8mb4 < "' + $trackSql + '"'
+            cmd /c $trackCmd 2>$null
+        }
         Write-Host "  Database initialized" -ForegroundColor Green
     } else {
         Write-Host "  Database ready ($count flight records)" -ForegroundColor Green
