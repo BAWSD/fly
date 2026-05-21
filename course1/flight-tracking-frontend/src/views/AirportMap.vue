@@ -1,33 +1,58 @@
 <template>
   <div class="airport-map-view">
-    <!-- Main Row - Map + Sidebar -->
+    <!-- Main Row - Map Controls + Map + Sidebar -->
     <el-row :gutter="20" class="main-row">
-      <el-col :xs="24" :md="18">
+      <!-- 地图控制面板 (左侧) -->
+      <el-col :xs="24" :md="2">
+        <el-card shadow="hover" class="control-card">
+          <template #header>
+            <div class="card-header"><span>地图控制</span></div>
+          </template>
+          <div class="control-body">
+            <div class="control-section">
+              <div class="control-title">状态筛选</div>
+              <el-checkbox-group v-model="mapStatusFilter" @change="handleMapFilter">
+                <el-checkbox v-for="s in statusOptions" :key="s.value" :label="s.value" size="small">
+                  {{ s.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </div>
+            <div class="control-section">
+              <div class="control-title">显示选项</div>
+              <el-checkbox v-model="showFlightPath" size="small" @change="handleTogglePath">航线</el-checkbox>
+              <el-checkbox v-model="showAirports" size="small" @change="handleToggleAirports">机场</el-checkbox>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 地图 -->
+      <el-col :xs="24" :md="16">
         <div class="map-wrapper">
           <el-card shadow="hover" class="main-map-card">
             <template #header>
-              <div class="card-header">
-                <span>实时航班追踪与机场监控</span>
-                <div class="header-actions">
-                  <el-button size="small" type="primary" @click="refreshAll">
-                    <el-icon><Refresh /></el-icon>刷新全部
-                  </el-button>
-                  <el-button size="small" @click="showSettings">
-                    <el-icon><Setting /></el-icon>设置
-                  </el-button>
+                <div class="card-header">
+                  <span>实时航班追踪与机场监控</span>
+                  <div class="header-actions">
+                    <el-button size="small" type="primary" @click="refreshAll">
+                      <el-icon><Refresh /></el-icon>刷新全部
+                    </el-button>
+                  </div>
                 </div>
-              </div>
             </template>
             <RealTimeMap ref="realTimeMapRef" />
           </el-card>
         </div>
       </el-col>
 
+      <!-- 右侧侧边栏 -->
       <el-col :xs="24" :md="6">
         <el-card shadow="hover" class="sidebar-card">
           <el-tabs v-model="activeTab" class="info-tabs">
             <el-tab-pane label="机场信息" name="airports">
-              <AirportView :airports="airports" @select-airport="handleSelectAirport" />
+              <div class="airport-panel">
+                <AirportView :airports="airports" @select-airport="handleSelectAirport" />
+              </div>
             </el-tab-pane>
             <el-tab-pane label="航班列表" name="flights">
               <div class="flight-sidebar">
@@ -189,71 +214,11 @@
               </el-button>
             </div>
 
-            <div class="control-group">
-              <el-button size="small" @click="showSettings">
-                <el-icon><Setting /></el-icon>设置
-              </el-button>
-            </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- Settings Dialog -->
-    <el-dialog
-      v-model="settingsDialogVisible"
-      title="地图设置"
-      width="500px"
-    >
-      <el-form label-width="100px">
-        <el-form-item label="地图类型">
-          <el-radio-group v-model="mapType">
-            <el-radio label="normal">标准地图</el-radio>
-            <el-radio label="satellite">卫星地图</el-radio>
-            <el-radio label="terrain">地形图</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item label="标签大小">
-          <el-slider v-model="labelSize" :min="12" :max="24" :step="2" show-input />
-        </el-form-item>
-
-        <el-form-item label="图标大小">
-          <el-slider v-model="iconSize" :min="16" :max="40" :step="2" show-input />
-        </el-form-item>
-
-        <el-form-item label="轨迹透明度">
-          <el-slider v-model="trackOpacity" :min="0.1" :max="1" :step="0.1" show-input />
-        </el-form-item>
-
-        <el-form-item label="自动居中">
-          <el-switch v-model="autoCenter" />
-        </el-form-item>
-
-        <el-form-item label="显示天气图层">
-          <el-switch v-model="showWeatherLayer" />
-        </el-form-item>
-
-        <el-form-item label="显示交通流量">
-          <el-switch v-model="showTrafficLayer" />
-        </el-form-item>
-
-        <el-form-item label="显示延迟航班">
-          <el-switch v-model="showDelayedFlights" />
-        </el-form-item>
-
-        <el-form-item label="显示取消航班">
-          <el-switch v-model="showCancelledFlights" />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="settingsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="applySettings">应用</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -261,7 +226,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Refresh, Setting, Search, Right } from '@element-plus/icons-vue'
+import { Refresh, Search, Right } from '@element-plus/icons-vue'
 import { flightApi, statusApi } from '@/api'
 import { dateUtils } from '@/utils/date'
 import RealTimeMap from '@/components/map/RealTimeMap.vue'
@@ -271,22 +236,27 @@ const route = useRoute()
 const realTimeMapRef = ref()
 
 const activeTab = ref('flights')
-const settingsDialogVisible = ref(false)
 const flightFilter = ref('')
 const selectedFlight = ref(null)
+
+// 地图控制状态
+const mapStatusFilter = ref(['IN_AIR', 'DEPARTED', 'ARRIVED'])
+const showFlightPath = ref(true)
+const showAirports = ref(true)
+const mapStyle = ref('normal')
+const searchFlightText = ref('')
+const statusOptions = [
+  { value: 'SCHEDULED', label: '计划中' },
+  { value: 'DELAYED', label: '延误' },
+  { value: 'IN_AIR', label: '飞行中' },
+  { value: 'DEPARTED', label: '已起飞' },
+  { value: 'ARRIVED', label: '已到达' },
+  { value: 'CANCELLED', label: '已取消' }
+]
 
 const viewRange = ref('nationwide')
 const refreshInterval = ref(10)
 const autoCenter = ref(true)
-const showWeatherLayer = ref(false)
-const showTrafficLayer = ref(false)
-
-const mapType = ref('normal')
-const labelSize = ref(16)
-const iconSize = ref(24)
-const trackOpacity = ref(0.7)
-const showDelayedFlights = ref(true)
-const showCancelledFlights = ref(false)
 
 const airports = ref([
   { code: 'PEK', name: '北京首都国际机场', flights: 45, lat: 40.0799, lng: 116.6031 },
@@ -436,6 +406,38 @@ const calculateAirlineStats = () => {
     }))
 }
 
+// 地图控制事件处理
+const handleMapFilter = () => {
+  if (realTimeMapRef.value?.filterFlights) {
+    realTimeMapRef.value.filterFlights(mapStatusFilter.value)
+  }
+}
+
+const handleTogglePath = (val) => {
+  if (realTimeMapRef.value?.toggleFlightPath) {
+    realTimeMapRef.value.toggleFlightPath(val)
+  }
+}
+
+const handleToggleAirports = (val) => {
+  if (realTimeMapRef.value?.toggleAirports) {
+    realTimeMapRef.value.toggleAirports(val)
+  }
+}
+
+const handleMapStyleChange = (val) => {
+  if (realTimeMapRef.value?.changeMapStyle) {
+    realTimeMapRef.value.changeMapStyle(val)
+  }
+}
+
+const handleSearchFlight = () => {
+  if (!searchFlightText.value.trim()) return
+  if (realTimeMapRef.value?.searchFlightOnMap) {
+    realTimeMapRef.value.searchFlightOnMap(searchFlightText.value)
+  }
+}
+
 const handleSelectAirport = (airport) => {
   if (realTimeMapRef.value?.centerOnAirport) {
     realTimeMapRef.value.centerOnAirport(airport)
@@ -446,8 +448,8 @@ const handleSelectAirport = (airport) => {
 const selectFlight = (flight) => {
   selectedFlight.value = flight
 
-  if (autoCenter.value && realTimeMapRef.value?.centerOnFlight) {
-    realTimeMapRef.value.centerOnFlight(flight)
+  if (autoCenter.value && realTimeMapRef.value?.focusFlightOnMap) {
+    realTimeMapRef.value.focusFlightOnMap(flight.flightNumber)
   }
 }
 
@@ -457,10 +459,6 @@ const refreshAll = () => {
     realTimeMapRef.value.refresh()
   }
   ElMessage.success('已刷新数据')
-}
-
-const showSettings = () => {
-  settingsDialogVisible.value = true
 }
 
 const changeViewRange = (range) => {
@@ -491,42 +489,20 @@ const changeRefreshInterval = (interval) => {
   ElMessage.info(`刷新间隔已设置为: ${interval === 0 ? '不自动刷新' : interval + '秒'}`)
 }
 
-const toggleAutoCenter = (checked) => {
-  ElMessage.info(`自动居中: ${checked ? '开启' : '关闭'}`)
-}
-
-const toggleWeatherLayer = (checked) => {
-  if (realTimeMapRef.value?.toggleWeather) {
-    realTimeMapRef.value.toggleWeather(checked)
+const applyInitialMapFilter = (attempt = 0) => {
+  if (realTimeMapRef.value?.filterFlights) {
+    realTimeMapRef.value.filterFlights(mapStatusFilter.value)
+    return
   }
-  ElMessage.info(`天气图层: ${checked ? '显示' : '隐藏'}`)
-}
-
-const toggleTrafficLayer = (checked) => {
-  if (realTimeMapRef.value?.toggleTraffic) {
-    realTimeMapRef.value.toggleTraffic(checked)
+  if (attempt < 10) {
+    setTimeout(() => applyInitialMapFilter(attempt + 1), 100)
   }
-  ElMessage.info(`交通流量: ${checked ? '显示' : '隐藏'}`)
-}
-
-const applySettings = () => {
-  if (realTimeMapRef.value?.applySettings) {
-    realTimeMapRef.value.applySettings({
-      mapType: mapType.value,
-      labelSize: labelSize.value,
-      iconSize: iconSize.value,
-      trackOpacity: trackOpacity.value,
-      showDelayedFlights: showDelayedFlights.value,
-      showCancelledFlights: showCancelledFlights.value
-    })
-  }
-  settingsDialogVisible.value = false
-  ElMessage.success('设置已应用')
 }
 
 onMounted(() => {
   loadFlightData()
   changeRefreshInterval(refreshInterval.value)
+  applyInitialMapFilter()
 })
 
 watch(() => route.query.flight, (flightNumber) => {
@@ -542,20 +518,21 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .airport-map-view {
-  height: 100%;
+  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 
   .main-row {
     flex: 1;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+    overflow: hidden;
 
     .map-wrapper {
       height: 100%;
 
       .main-map-card {
         height: 100%;
-        min-height: 600px;
 
         :deep(.el-card__body) {
           height: calc(100% - 52px);
@@ -564,27 +541,100 @@ onUnmounted(() => {
       }
     }
 
+    .control-card {
+      height: 100%;
+
+      :deep(.el-card__body) {
+        height: calc(100% - 52px);
+        overflow-y: auto;
+      }
+
+      .control-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .control-section {
+          .control-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .el-checkbox {
+            display: flex;
+            margin-right: 0;
+            margin-bottom: 6px;
+          }
+        }
+      }
+    }
+
     .sidebar-card {
       height: 100%;
-      min-height: 600px;
+      max-height: 600px;
+
+      :deep(.el-card__body) {
+        height: calc(100% - 52px);
+        max-height: calc(600px - 52px);
+        padding: 16px 20px !important;
+        overflow: hidden;
+      }
 
       .info-tabs {
         height: 100%;
+        display: flex;
+        flex-direction: column;
 
         :deep(.el-tabs__content) {
-          height: calc(100% - 40px);
-          overflow-y: auto;
+          flex: 1;
+          overflow: hidden;
+        }
+
+        :deep(.el-tab-pane) {
+          height: 100%;
+          overflow: hidden;
+        }
+      }
+
+      .airport-panel {
+        height: 100%;
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: #c4c9d4;
+          border-radius: 3px;
         }
       }
 
       .flight-sidebar {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+
         .flight-search {
-          margin-bottom: 15px;
+          margin-bottom: 12px;
+          flex-shrink: 0;
         }
 
         .flight-list-container {
-          max-height: 500px;
+          flex: 1;
           overflow-y: auto;
+          padding-right: 4px;
+
+          &::-webkit-scrollbar {
+            width: 6px;
+          }
+          &::-webkit-scrollbar-thumb {
+            background: #c4c9d4;
+            border-radius: 3px;
+          }
 
           .flight-item {
             padding: 10px 12px;
@@ -654,9 +704,17 @@ onUnmounted(() => {
       }
 
       .stats-container {
-        max-height: 500px;
+        height: 100%;
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: 6px;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: #c4c9d4;
+          border-radius: 3px;
+        }
 
         .stats-section {
           margin-bottom: 16px;

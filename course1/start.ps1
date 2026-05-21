@@ -44,14 +44,9 @@ try {
     $count = docker exec flight-mysql mysql -uroot -p123456 -e "SELECT COUNT(*) FROM flight_info.flight_info" -sN 2>$null
     if ([int]$count -lt 20) {
         Write-Host "  Initializing database..." -ForegroundColor Gray
-        $sqlFile = Join-Path $base "init-db.sql"
+        $sqlFile = Join-Path $base "init-all.sql"
         $cmd = 'docker exec -i flight-mysql mysql -uroot -p123456 --default-character-set=utf8mb4 < "' + $sqlFile + '"'
         cmd /c $cmd 2>$null
-        $trackSql = Join-Path $base "track-data.sql"
-        if (Test-Path $trackSql) {
-            $trackCmd = 'docker exec -i flight-mysql mysql -uroot -p123456 --default-character-set=utf8mb4 < "' + $trackSql + '"'
-            cmd /c $trackCmd 2>$null
-        }
         Write-Host "  Database initialized" -ForegroundColor Green
     } else {
         Write-Host "  Database ready ($count flight records)" -ForegroundColor Green

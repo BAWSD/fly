@@ -45,13 +45,18 @@ const handleSelect = (airport) => {
 
 <style scoped lang="scss">
 .airport-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
   .search {
     margin-bottom: 12px;
   }
 
   .airport-list {
-    max-height: 500px;
+    flex: 1;
     overflow-y: auto;
+    max-height: none;
 
     .airport-item {
       padding: 10px;

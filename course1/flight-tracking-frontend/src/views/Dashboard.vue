@@ -59,7 +59,7 @@
     <!-- Map + Controls + Flight List -->
     <el-row :gutter="16" class="middle-row">
       <!-- Map Controls (left) -->
-      <el-col :xs="24" :md="4">
+      <el-col :xs="24" :md="2">
         <el-card shadow="hover" class="control-card">
           <template #header>
             <div class="card-header"><span>地图控制</span></div>
@@ -78,29 +78,12 @@
               <el-checkbox v-model="showFlightPath" size="small" @change="handleTogglePath">航线</el-checkbox>
               <el-checkbox v-model="showAirports" size="small" @change="handleToggleAirports">机场</el-checkbox>
             </div>
-            <div class="control-section">
-              <div class="control-title">地图样式</div>
-              <el-select v-model="mapStyle" size="small" @change="handleMapStyleChange" style="width:100%">
-                <el-option label="标准" value="normal" />
-                <el-option label="浅色" value="light" />
-                <el-option label="深色" value="dark" />
-                <el-option label="卫星" value="satellite" />
-              </el-select>
-            </div>
-            <div class="control-section">
-              <div class="control-title">搜索航班</div>
-              <el-input v-model="searchFlightText" placeholder="输入航班号" size="small" clearable @keyup.enter="handleSearchFlight">
-                <template #append>
-                  <el-button :icon="Search" size="small" @click="handleSearchFlight" />
-                </template>
-              </el-input>
-            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- Map -->
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :md="16">
         <el-card shadow="hover" class="map-card">
           <template #header>
             <div class="card-header">
@@ -112,12 +95,16 @@
               </div>
             </div>
           </template>
-          <RealTimeMap ref="realTimeMapRef" />
+          <RealTimeMap
+            ref="realTimeMapRef"
+            :limitFlights="10"
+            :flightNumbers="recentFlightNumbers"
+          />
         </el-card>
       </el-col>
 
       <!-- Flight List (right, reduced width) -->
-      <el-col :xs="24" :md="8">
+      <el-col :xs="24" :md="6">
         <el-card shadow="hover" class="flight-list-card">
           <template #header>
             <div class="card-header">
@@ -135,7 +122,7 @@
               v-for="flight in recentFlights"
               :key="flight.id || flight.flightNumber"
               class="flight-item"
-              @click="viewFlightDetail(flight.flightNumber)"
+              @click="focusRecentFlight(flight)"
             >
               <div class="flight-header">
                 <span class="flight-number">{{ flight.flightNumber }}</span>
@@ -164,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Collection, Aim, Clock, Location, Refresh, Right, Search } from '@element-plus/icons-vue'
@@ -185,8 +172,14 @@ const recentFlights = ref([])
 const selectedFlight = ref(null)
 const realTimeMapRef = ref()
 
+const recentFlightNumbers = computed(() => {
+  return recentFlights.value
+    .map(flight => flight.flightNumber)
+    .filter(Boolean)
+})
+
 // Map controls state
-const mapStatusFilter = ref(['IN_AIR'])
+const mapStatusFilter = ref(['IN_AIR', 'DEPARTED', 'ARRIVED'])
 const showFlightPath = ref(true)
 const showAirports = ref(true)
 const mapStyle = ref('normal')
@@ -204,7 +197,7 @@ const loadDashboardData = async () => {
   try {
     const [statsRes, recentRes] = await Promise.all([
       flightApi.getFlightStats(),
-      flightApi.getFlightList({ pageSize: 10 })
+      flightApi.getFlightList({ pageSize: 10, sortField: 'planned_departure_time', sortOrder: 'desc' })
     ])
 
     if (statsRes.data) {
@@ -212,7 +205,9 @@ const loadDashboardData = async () => {
     }
 
     if (recentRes.data) {
-      recentFlights.value = recentRes.data.records || []
+      // 只保留最新的10条
+      const all = recentRes.data.records || []
+      recentFlights.value = all.slice(0, 10)
       if (recentFlights.value.length > 0) {
         selectedFlight.value = recentFlights.value[0]
       }
@@ -243,8 +238,11 @@ const updateStats = (data) => {
   }
 }
 
-const viewFlightDetail = (flightNumber) => {
-  router.push({ name: 'FlightDetail', params: { flightNumber } })
+const focusRecentFlight = (flight) => {
+  selectedFlight.value = flight
+  if (realTimeMapRef.value?.focusFlightOnMap) {
+    realTimeMapRef.value.focusFlightOnMap(flight.flightNumber)
+  }
 }
 
 const refreshMap = () => {
@@ -286,7 +284,11 @@ const handleSearchFlight = () => {
 
 const loadRecentFlights = async () => {
   try {
-    const res = await flightApi.getFlightList({ pageSize: 10 })
+    const res = await flightApi.getFlightList({
+      pageSize: 10,
+      sortField: 'planned_departure_time',
+      sortOrder: 'desc'
+    })
     recentFlights.value = res.data?.records || []
     ElMessage.success('航班列表已刷新')
   } catch (error) {
@@ -294,17 +296,31 @@ const loadRecentFlights = async () => {
   }
 }
 
+const applyInitialMapFilter = (attempt = 0) => {
+  if (realTimeMapRef.value?.filterFlights) {
+    realTimeMapRef.value.filterFlights(mapStatusFilter.value)
+    return
+  }
+  if (attempt < 10) {
+    setTimeout(() => applyInitialMapFilter(attempt + 1), 100)
+  }
+}
+
 onMounted(async () => {
   await loadDashboardData()
+  applyInitialMapFilter()
 })
 </script>
 
 <style lang="scss" scoped>
 .dashboard {
   height: 100%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   .stats-row {
+    flex-shrink: 0;
     margin-bottom: 16px;
 
     .stat-card {
@@ -359,10 +375,16 @@ onMounted(async () => {
 
   .middle-row {
     margin-bottom: 16px;
+    flex: 1;
+    overflow: hidden;
 
     .control-card {
-      min-height: 540px;
-      height: 540px;
+      height: 100%;
+
+      :deep(.el-card__body) {
+        height: calc(100% - 52px);
+        overflow-y: auto;
+      }
 
       .control-body {
         display: flex;
@@ -389,8 +411,7 @@ onMounted(async () => {
     }
 
     .map-card {
-      min-height: 540px;
-      height: 540px;
+      height: 100%;
 
       :deep(.el-card__body) {
         height: calc(100% - 52px);
@@ -398,13 +419,33 @@ onMounted(async () => {
       }
     }
 
-    .flight-list-card {
-      min-height: 540px;
-      height: 540px;
+      .flight-list-card {
+        height: 100%;
+        max-height: 560px;
 
-      .flight-list {
-        height: calc(100% - 52px);
-        padding-right: 4px;
+        :deep(.el-card__body) {
+          height: calc(100% - 52px);
+          max-height: calc(560px - 52px);
+          padding: 16px 20px !important;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .flight-list {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding-right: 6px;
+
+          &::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: #c4c9d4;
+            border-radius: 3px;
+          }
 
         .empty-list {
           height: 100%;

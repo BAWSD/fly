@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +21,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class FlightStatusServiceImpl extends ServiceImpl<FlightStatusMapper, FlightStatus>
         implements FlightStatusService {
+
+    private static final int TRACK_MAX_POINTS = 200;
+    private static final int TRACK_SEED_POINTS = 24;
 
     @Override
     public FlightStatus getLatestStatus(String flightNumber) {
@@ -36,11 +40,7 @@ public class FlightStatusServiceImpl extends ServiceImpl<FlightStatusMapper, Fli
 
     @Override
     public List<FlightStatus> getActiveFlights() {
-        LambdaQueryWrapper<FlightStatus> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(FlightStatus::getCurrentStatus,
-                "DEPARTED", "IN_AIR", "BOARDING", "ON_TIME", "DELAYED")
-                .orderByAsc(FlightStatus::getLastUpdated);
-        return this.list(wrapper);
+        return this.baseMapper.selectLatestActiveFlights();
     }
 
     @Override
@@ -54,12 +54,83 @@ public class FlightStatusServiceImpl extends ServiceImpl<FlightStatusMapper, Fli
                 .last("LIMIT 1");
         FlightStatus existing = this.getOne(wrapper);
         if (existing != null) {
+            if (flightStatus.getFlightInfoId() == null) {
+                flightStatus.setFlightInfoId(existing.getFlightInfoId());
+            }
+            boolean trackable = isTrackStatus(flightStatus.getCurrentStatus());
+            boolean moved = !samePosition(existing, flightStatus);
+            if (trackable && moved) {
+                flightStatus.setId(null);
+                flightStatus.setCreateTime(LocalDateTime.now());
+                this.save(flightStatus);
+                return;
+            }
             flightStatus.setId(existing.getId());
             this.updateById(flightStatus);
         } else {
             flightStatus.setCreateTime(LocalDateTime.now());
             this.save(flightStatus);
         }
+    }
+
+    private boolean isTrackStatus(String status) {
+        return "DEPARTED".equals(status) || "IN_AIR".equals(status) || "ARRIVED".equals(status);
+    }
+
+    private boolean samePosition(FlightStatus a, FlightStatus b) {
+        if (a == null || b == null) return false;
+        if (a.getLatitude() == null || a.getLongitude() == null) return false;
+        if (b.getLatitude() == null || b.getLongitude() == null) return false;
+        return a.getLatitude().compareTo(b.getLatitude()) == 0 &&
+               a.getLongitude().compareTo(b.getLongitude()) == 0;
+    }
+
+    private List<FlightStatus> buildSeedTrack(FlightStatus latest) {
+        ensurePosition(latest);
+        if (latest.getLatitude() == null || latest.getLongitude() == null) {
+            return Collections.emptyList();
+        }
+
+        int count = Math.min(TRACK_MAX_POINTS, TRACK_SEED_POINTS);
+        double endLat = latest.getLatitude().doubleValue();
+        double endLon = latest.getLongitude().doubleValue();
+
+        int hash = Math.abs((latest.getFlightNumber() == null) ? 0 : latest.getFlightNumber().hashCode());
+        double deltaLat = 0.3 + (hash % 700) / 700.0 * 1.2;
+        double deltaLon = 0.3 + ((hash / 700) % 700) / 700.0 * 1.5;
+        double startLat = endLat - deltaLat;
+        double startLon = endLon - deltaLon;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<FlightStatus> points = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            double t = (count == 1) ? 1.0 : (double) i / (count - 1);
+            FlightStatus point = new FlightStatus();
+            point.setFlightInfoId(latest.getFlightInfoId());
+            point.setFlightNumber(latest.getFlightNumber());
+            point.setCurrentStatus(latest.getCurrentStatus());
+            point.setDelayMinutes(latest.getDelayMinutes());
+            point.setCurrentAltitude(latest.getCurrentAltitude());
+            point.setCurrentSpeed(latest.getCurrentSpeed());
+            point.setLatitude(BigDecimal.valueOf(startLat + (endLat - startLat) * t));
+            point.setLongitude(BigDecimal.valueOf(startLon + (endLon - startLon) * t));
+            point.setLastUpdated(now.minusMinutes((long) (count - 1 - i) * 2));
+            point.setDescription(latest.getDescription());
+            points.add(point);
+        }
+        return points;
+    }
+
+    private void ensurePosition(FlightStatus status) {
+        if (status.getLatitude() != null && status.getLongitude() != null) {
+            return;
+        }
+        String flightNumber = status.getFlightNumber();
+        int hash = Math.abs(flightNumber == null ? 0 : flightNumber.hashCode());
+        double lat = 20.0 + (hash % 2000) / 100.0;
+        double lon = 100.0 + ((hash / 2000) % 2500) / 100.0;
+        status.setLatitude(BigDecimal.valueOf(lat));
+        status.setLongitude(BigDecimal.valueOf(lon));
     }
 
     @Override
@@ -76,15 +147,18 @@ public class FlightStatusServiceImpl extends ServiceImpl<FlightStatusMapper, Fli
         wrapper.eq(FlightStatus::getFlightNumber, flightNumber)
                 .isNotNull(FlightStatus::getLatitude)
                 .isNotNull(FlightStatus::getLongitude)
-                .orderByAsc(FlightStatus::getLastUpdated);
+                .orderByDesc(FlightStatus::getLastUpdated)
+                .last("LIMIT " + TRACK_MAX_POINTS);
         List<FlightStatus> track = this.list(wrapper);
         // If no track points with coordinates, fall back to all records
         if (track.isEmpty()) {
             wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(FlightStatus::getFlightNumber, flightNumber)
-                    .orderByAsc(FlightStatus::getLastUpdated);
+                    .orderByDesc(FlightStatus::getLastUpdated)
+                    .last("LIMIT " + TRACK_MAX_POINTS);
             track = this.list(wrapper);
         }
+        track.sort(Comparator.comparing(FlightStatus::getLastUpdated));
         return track;
     }
 

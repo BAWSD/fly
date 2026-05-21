@@ -90,9 +90,6 @@
               <el-button @click="handleReset">
                 <el-icon><Refresh /></el-icon>重置
               </el-button>
-              <el-button type="success" @click="handleAdd">
-                <el-icon><Plus /></el-icon>添加航班
-              </el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -102,7 +99,12 @@
     <el-card shadow="never" class="table-card">
       <template #header>
         <div class="table-header">
-          <span>航班列表</span>
+          <div class="header-left">
+            <span>航班列表</span>
+            <el-button type="success" size="small" @click="handleAdd">
+              <el-icon><Plus /></el-icon>添加航班
+            </el-button>
+          </div>
           <div class="header-actions">
             <el-button @click="refreshData" :loading="loading">
               <el-icon><Refresh /></el-icon>刷新
@@ -143,17 +145,17 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <el-button type="text" size="small" @click="viewDetail(row.flightNumber)" style="color: #409EFF">
-              详情
-            </el-button>
-            <el-button type="text" size="small" @click="showOnMap(row.flightNumber)">
-              在地图显示
-            </el-button>
-            <el-button type="warning" link size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
+            <div class="action-buttons">
+              <el-button type="primary" link size="small" @click="viewDetail(row.flightNumber)">
+                详情
+              </el-button>
+              <el-divider direction="vertical" />
+              <el-button type="warning" link size="small" @click="handleEdit(row)">
+                编辑
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -314,11 +316,6 @@ const handleSelectionChange = (selection) => {
 const viewDetail = (flightNumber) => {
   router.push({ name: 'FlightDetail', params: { flightNumber } })
 }
-
-const showOnMap = (flightNumber) => {
-  router.push({ name: 'Tracking', query: { flight: flightNumber } })
-}
-
 const handleAdd = () => {
   currentFlight.value = null
   dialogVisible.value = true
@@ -374,7 +371,14 @@ onMounted(() => {
     .table-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+
+      .header-left {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
 
       span {
         font-weight: bold;
@@ -384,6 +388,7 @@ onMounted(() => {
       .header-actions {
         display: flex;
         gap: 10px;
+        margin-top: 2px;
       }
     }
 
@@ -393,6 +398,18 @@ onMounted(() => {
 
       div {
         margin-bottom: 2px;
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      white-space: nowrap;
+
+      .el-button {
+        padding: 0 4px;
+        font-size: 13px;
       }
     }
 

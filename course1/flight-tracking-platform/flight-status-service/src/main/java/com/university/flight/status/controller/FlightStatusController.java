@@ -68,11 +68,24 @@ public class FlightStatusController {
     public void broadcastFlightPositions() {
         List<FlightStatus> activeFlights = flightStatusService.getActiveFlights();
         for (FlightStatus status : activeFlights) {
+            ensurePosition(status);
             simulateMovement(status);
             flightStatusService.updatePosition(status);
             messagingTemplate.convertAndSend("/topic/flight.position." + status.getFlightNumber(), status);
             messagingTemplate.convertAndSend("/topic/flight.positions.all", status);
         }
+    }
+
+    private void ensurePosition(FlightStatus status) {
+        if (status.getLatitude() != null && status.getLongitude() != null) {
+            return;
+        }
+        String flightNumber = status.getFlightNumber();
+        int hash = Math.abs(flightNumber == null ? 0 : flightNumber.hashCode());
+        double lat = 20.0 + (hash % 2000) / 100.0; // 20.00 - 39.99
+        double lon = 100.0 + ((hash / 2000) % 2500) / 100.0; // 100.00 - 124.99
+        status.setLatitude(BigDecimal.valueOf(lat));
+        status.setLongitude(BigDecimal.valueOf(lon));
     }
 
     private void simulateMovement(FlightStatus status) {
