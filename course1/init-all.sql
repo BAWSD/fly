@@ -177,27 +177,27 @@ INSERT INTO flight_status.flight_status (flight_info_id, flight_number, current_
 (5, 'HU7602', 'IN_AIR', 0, 35000, 500, 36.2000, 115.5000, DATE_SUB(NOW(), INTERVAL 90 MINUTE), '巡航中'),
 (5, 'HU7602', 'IN_AIR', 0, 36000, 510, 33.0000, 114.2000, DATE_SUB(NOW(), INTERVAL 60 MINUTE), '巡航中'),
 (5, 'HU7602', 'IN_AIR', 0, 32000, 470, 28.5000, 113.5000, DATE_SUB(NOW(), INTERVAL 30 MINUTE), '下降阶段'),
-(5, 'HU7602', 'IN_AIR', 0, 28000, 420, 25.5000, 113.0000, NOW(), '进近中');
+(5, 'HU7602', 'IN_AIR', 0, 28000, 420, 25.5000, 113.0000, DATE_SUB(NOW(), INTERVAL 1 MINUTE), '进近中');
 
 -- HU7890 飞行轨迹 (PEK->PVG) 4个轨迹点
 INSERT INTO flight_status.flight_status (flight_info_id, flight_number, current_status, delay_minutes, current_altitude, current_speed, latitude, longitude, last_updated, description) VALUES
 (10, 'HU7890', 'DEPARTED', 0, 8000, 350, 38.5000, 117.2000, DATE_SUB(NOW(), INTERVAL 60 MINUTE), '爬升阶段'),
 (10, 'HU7890', 'DEPARTED', 0, 33000, 470, 35.0000, 119.0000, DATE_SUB(NOW(), INTERVAL 40 MINUTE), '巡航中'),
 (10, 'HU7890', 'DEPARTED', 0, 30000, 450, 32.8000, 120.5000, DATE_SUB(NOW(), INTERVAL 20 MINUTE), '下降阶段'),
-(10, 'HU7890', 'DEPARTED', 0, 28000, 420, 31.2343, 121.4726, NOW(), '进近中');
+(10, 'HU7890', 'DEPARTED', 0, 28000, 420, 31.2343, 121.4726, DATE_SUB(NOW(), INTERVAL 1 MINUTE), '进近中');
 
 -- HU7603 飞行轨迹 (PVG->PEK) 4个轨迹点
 INSERT INTO flight_status.flight_status (flight_info_id, flight_number, current_status, delay_minutes, current_altitude, current_speed, latitude, longitude, last_updated, description) VALUES
 (19, 'HU7603', 'IN_AIR', 0, 6000, 320, 31.5000, 121.8000, DATE_SUB(NOW(), INTERVAL 90 MINUTE), '起飞爬升'),
 (19, 'HU7603', 'IN_AIR', 0, 35000, 490, 33.5000, 120.0000, DATE_SUB(NOW(), INTERVAL 60 MINUTE), '巡航中'),
 (19, 'HU7603', 'IN_AIR', 0, 34000, 480, 36.0000, 118.5000, DATE_SUB(NOW(), INTERVAL 30 MINUTE), '巡航中'),
-(19, 'HU7603', 'IN_AIR', 0, 32000, 460, 38.5000, 117.2000, NOW(), '下降阶段');
+(19, 'HU7603', 'IN_AIR', 0, 32000, 460, 38.5000, 117.2000, DATE_SUB(NOW(), INTERVAL 1 MINUTE), '下降阶段');
 
 -- MU5679 飞行轨迹 (CAN->PVG) 3个轨迹点
 INSERT INTO flight_status.flight_status (flight_info_id, flight_number, current_status, delay_minutes, current_altitude, current_speed, latitude, longitude, last_updated, description) VALUES
 (17, 'MU5679', 'DEPARTED', 0, 10000, 350, 24.0000, 113.5000, DATE_SUB(NOW(), INTERVAL 45 MINUTE), '爬升阶段'),
 (17, 'MU5679', 'DEPARTED', 0, 28000, 430, 27.5000, 117.0000, DATE_SUB(NOW(), INTERVAL 20 MINUTE), '巡航中'),
-(17, 'MU5679', 'DEPARTED', 0, 15000, 320, 30.0000, 120.0000, NOW(), '下降阶段');
+(17, 'MU5679', 'DEPARTED', 0, 15000, 320, 30.0000, 120.0000, DATE_SUB(NOW(), INTERVAL 1 MINUTE), '下降阶段');
 
 -- CA1235 飞行轨迹 (SHA->PEK) 3个轨迹点
 INSERT INTO flight_status.flight_status (flight_info_id, flight_number, current_status, delay_minutes, current_altitude, current_speed, latitude, longitude, last_updated, description) VALUES

@@ -55,18 +55,13 @@ try {
     Write-Host "  Database check skipped" -ForegroundColor DarkGray
 }
 
-# Step 3: Check/Build backend
-Write-Host "[3/5] Checking backend build..." -ForegroundColor Yellow
-$jarPath = Join-Path $platform "api-gateway/target/api-gateway-1.0.0.jar"
-if (-not (Test-Path $jarPath)) {
-    Write-Host "  Building backend (may take a while on first run)..." -ForegroundColor Gray
-    Push-Location $platform
-    mvn clean package -DskipTests -T 4 2>$null
-    Pop-Location
-    Write-Host "  Build complete" -ForegroundColor Green
-} else {
-    Write-Host "  Backend already built" -ForegroundColor Green
-}
+# Step 3: Build backend (avoid stale jars)
+Write-Host "[3/5] Building backend..." -ForegroundColor Yellow
+Write-Host "  Building backend (may take a while on first run)..." -ForegroundColor Gray
+Push-Location $platform
+mvn clean package -DskipTests -T 4 2>$null
+Pop-Location
+Write-Host "  Build complete" -ForegroundColor Green
 
 # Step 4: Stop old processes and start backend services
 Write-Host "[4/5] Starting backend services..." -ForegroundColor Yellow
