@@ -164,22 +164,23 @@ public class FlightStatusServiceImpl extends ServiceImpl<FlightStatusMapper, Fli
 
     @Override
     public Map<String, Object> getDelayStats(int days) {
+        List<FlightStatus> latestStatuses = this.baseMapper.selectLatestStatuses();
         List<FlightStatus> allStatuses = this.list();
-        long delayedCount = allStatuses.stream()
-                .filter(s -> "DELAYED".equals(s.getCurrentStatus()) ||
-                             (s.getDelayMinutes() != null && s.getDelayMinutes() > 0))
-                .count();
-        long onTimeCount = allStatuses.stream()
-                .filter(s -> "ON_TIME".equals(s.getCurrentStatus()) ||
-                             (s.getDelayMinutes() != null && s.getDelayMinutes() == 0))
-                .count();
-        long totalCount = allStatuses.size();
+        long delayedCount = latestStatuses.stream()
+            .filter(s -> "DELAYED".equals(s.getCurrentStatus()) ||
+                     (s.getDelayMinutes() != null && s.getDelayMinutes() > 0))
+            .count();
+        long onTimeCount = latestStatuses.stream()
+            .filter(s -> "ON_TIME".equals(s.getCurrentStatus()) ||
+                     (s.getDelayMinutes() != null && s.getDelayMinutes() == 0))
+            .count();
+        long totalCount = latestStatuses.size();
 
-        double avgDelay = allStatuses.stream()
-                .filter(s -> s.getDelayMinutes() != null)
-                .mapToInt(FlightStatus::getDelayMinutes)
-                .average()
-                .orElse(0.0);
+        double avgDelay = latestStatuses.stream()
+            .filter(s -> s.getDelayMinutes() != null)
+            .mapToInt(FlightStatus::getDelayMinutes)
+            .average()
+            .orElse(0.0);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalFlights", totalCount);

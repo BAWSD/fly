@@ -81,7 +81,6 @@ const mapContainer = ref(null)
 const mapLoaded = ref(false)
 let map = null
 let polyline = null
-let markers = []
 let animationTimer = null
 let BMap = null
 
@@ -152,22 +151,10 @@ const initMap = async () => {
 const renderMap = () => {
   if (!map || !BMap || trackData.value.length === 0) return
   map.clearOverlays()
-  markers = []
   const points = trackData.value.filter(p => p.latitude && p.longitude).map(p => new BMap.Point(p.longitude, p.latitude))
   if (points.length === 0) return
-  polyline = new BMap.Polyline(points, { strokeColor: '#409EFF', strokeWeight: 4, strokeOpacity: 0.8 })
+  polyline = new BMap.Polyline(points, { strokeColor: '#52c41a', strokeWeight: 4, strokeOpacity: 0.8 })
   map.addOverlay(polyline)
-  const startMarker = new BMap.Marker(points[0], { title: '起点' })
-  const endMarker = new BMap.Marker(points[points.length - 1], { title: '终点' })
-  map.addOverlay(startMarker)
-  map.addOverlay(endMarker)
-  markers.push(startMarker, endMarker)
-  const step = Math.max(1, Math.floor(points.length / 10))
-  for (let i = step; i < points.length - 1; i += step) {
-    const m = new BMap.Marker(points[i])
-    map.addOverlay(m)
-    markers.push(m)
-  }
   map.setViewport(points)
 }
 

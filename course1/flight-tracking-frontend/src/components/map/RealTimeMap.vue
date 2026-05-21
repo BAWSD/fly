@@ -95,7 +95,7 @@ import {
 } from '@element-plus/icons-vue'
 import { dateUtils } from '@/utils/date'
 import { useWebSocket } from '@/utils/websocket'
-import { flightApi, statusApi } from '@/api'
+import { flightApi, statusApi, airportApi } from '@/api'
 
 const router = useRouter()
 const { subscribeAllFlights, subscribeFlightUpdates, connectWebSocket } = useWebSocket()
@@ -507,6 +507,8 @@ const airportCoordinates = {
 }
 
 const addFlightPath = (flightData) => {
+  const flightKey = String(flightData.flightNumber || '').toUpperCase()
+  if (!flightKey) return
   const depCode = flightData.departureAirportCode
   const arrCode = flightData.arrivalAirportCode
   
@@ -539,8 +541,12 @@ const addFlightPath = (flightData) => {
     strokeOpacity: 0.5
   })
 
+  const existing = flightPaths.get(flightKey)
+  if (existing) {
+    map.removeOverlay(existing)
+  }
   map.addOverlay(polyline)
-  flightPaths.set(flightData.flightNumber, polyline)
+  flightPaths.set(flightKey, polyline)
 }
 
 const handleMarkerClick = (flightData) => {
@@ -626,19 +632,28 @@ const toggleFlightPath = (show) => {
   }
 }
 
-const loadAirports = () => {
-  const airports = [
-    { code: 'PEK', name: '北京首都国际机场', lat: 40.0799, lng: 116.6031 },
-    { code: 'PVG', name: '上海浦东国际机场', lat: 31.1443, lng: 121.8083 },
-    { code: 'CAN', name: '广州白云国际机场', lat: 23.3924, lng: 113.2988 },
-    { code: 'SZX', name: '深圳宝安国际机场', lat: 22.6392, lng: 113.8107 },
-    { code: 'CTU', name: '成都双流国际机场', lat: 30.5785, lng: 103.9467 },
-    { code: 'CKG', name: '重庆江北国际机场', lat: 29.7192, lng: 106.6417 },
-    { code: 'XIY', name: '西安咸阳国际机场', lat: 34.4471, lng: 108.7516 },
-    { code: 'KMG', name: '昆明长水国际机场', lat: 25.1019, lng: 102.9292 },
-    { code: 'HGH', name: '杭州萧山国际机场', lat: 30.2295, lng: 120.4345 },
-    { code: 'NKG', name: '南京禄口国际机场', lat: 31.7420, lng: 118.8620 }
-  ]
+const loadAirports = async () => {
+  airportMarkers.forEach(({ marker, label }) => {
+    map.removeOverlay(marker)
+    map.removeOverlay(label)
+  })
+  airportMarkers.clear()
+
+  let airports = []
+  try {
+    const res = await airportApi.getAirportList()
+    const list = res.data?.records || res.data || []
+    airports = list.map(item => ({
+      code: item.airportCode || item.code,
+      name: item.airportName || item.name,
+      lat: Number(item.latitude),
+      lng: Number(item.longitude)
+    })).filter(item => item.code && Number.isFinite(item.lat) && Number.isFinite(item.lng))
+  } catch (error) {
+    console.error('加载机场列表失败:', error)
+  }
+
+  if (airports.length === 0) return
 
   airports.forEach(airport => {
     const point = new BMapGL.Point(airport.lng, airport.lat)
@@ -855,22 +870,7 @@ const showFlightTrack = async () => {
       map.addOverlay(polyline)
       trackOverlays.push(polyline)
 
-      track.forEach((point, index) => {
-        if (index % 5 === 0) {
-          const marker = new BMapGL.Marker(
-            new BMapGL.Point(point.longitude, point.latitude)
-          )
-
-          const label = new BMapGL.Label(
-            dateUtils.formatDate(point.timestamp, 'HH:mm'),
-            { position: new BMapGL.Point(point.longitude, point.latitude) }
-          )
-
-          map.addOverlay(marker)
-          map.addOverlay(label)
-          trackOverlays.push(marker, label)
-        }
-      })
+      // 仅显示轨迹线，不显示轨迹点或时间标签
 
       currentTrackFlightNumber.value = selectedFlight.value.flightNumber
       ElMessage.success('已显示航班轨迹')

@@ -23,4 +23,17 @@ public interface FlightStatusMapper extends BaseMapper<FlightStatus> {
 		ORDER BY fs.last_updated ASC
 	""")
 	List<FlightStatus> selectLatestActiveFlights();
+
+	@Select("""
+		SELECT fs.*
+		FROM flight_status fs
+		JOIN (
+			SELECT flight_number, MAX(id) AS max_id
+			FROM flight_status
+			GROUP BY flight_number
+		) m
+		ON fs.flight_number = m.flight_number AND fs.id = m.max_id
+		ORDER BY fs.last_updated ASC
+	""")
+	List<FlightStatus> selectLatestStatuses();
 }
