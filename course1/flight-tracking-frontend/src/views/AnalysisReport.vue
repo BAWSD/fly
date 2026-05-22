@@ -83,9 +83,6 @@
           <template #header>
             <div class="analysis-header">
               <h3>延误趋势分析</h3>
-              <el-button @click="generateDelaySummary" :loading="generatingSummary">
-                <el-icon><MagicStick /></el-icon>AI生成分析
-              </el-button>
             </div>
           </template>
           <div class="analysis-content">

@@ -101,9 +101,6 @@
         <div class="table-header">
           <div class="header-left">
             <span>航班列表</span>
-            <el-button type="success" size="small" @click="handleAdd">
-              <el-icon><Plus /></el-icon>添加航班
-            </el-button>
           </div>
           <div class="header-actions">
             <el-button @click="refreshData" :loading="loading">
@@ -202,7 +199,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
-import { flightApi } from '@/api'
+import { flightApi, statusApi } from '@/api'
 import { dateUtils } from '@/utils/date'
 import FlightForm from '@/components/flight/FlightForm.vue'
 
@@ -338,6 +335,26 @@ const handleSubmit = async () => {
       await flightApi.updateFlight(currentFlight.value.flightNumber, payload)
     } else {
       await flightApi.addFlight(payload)
+    }
+
+    try {
+      const detail = await flightApi.getFlightDetail(payload.flightNumber)
+      const flightInfoId = detail.data?.id
+      await statusApi.saveOrUpdateStatus({
+        flightInfoId,
+        flightNumber: payload.flightNumber,
+        currentStatus: payload.flightStatus,
+        delayMinutes: payload.delayMinutes,
+        currentAltitude: payload.currentAltitude,
+        currentSpeed: payload.currentSpeed,
+        latitude: payload.latitude,
+        longitude: payload.longitude,
+        description: payload.description,
+        lastUpdated: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('同步实时状态失败:', error)
+      ElMessage.warning('航班已保存，但实时状态同步失败')
     }
 
     dialogVisible.value = false

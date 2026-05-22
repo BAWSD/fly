@@ -57,6 +57,16 @@ public class FlightStatusController {
         return Result.success(flights);
     }
 
+    @PostMapping
+    public Result<Boolean> saveOrUpdateStatus(@RequestBody FlightStatus flightStatus) {
+        log.info("保存航班实时状态: {}", flightStatus);
+        if (flightStatus.getLastUpdated() == null) {
+            flightStatus.setLastUpdated(LocalDateTime.now());
+        }
+        flightStatusService.saveOrUpdateStatus(flightStatus);
+        return Result.success(true);
+    }
+
     @MessageMapping("/flight.subscribe")
     @SendTo("/topic/flight.updates")
     public FlightStatus subscribeFlight(String flightNumber) {

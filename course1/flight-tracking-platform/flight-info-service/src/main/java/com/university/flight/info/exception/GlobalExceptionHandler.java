@@ -3,6 +3,7 @@ package com.university.flight.info.exception;
 import com.university.flight.common.exception.BizException;
 import com.university.flight.common.model.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +20,12 @@ public class GlobalExceptionHandler {
     public Result<?> handleBizException(BizException e) {
         log.error("业务异常: {}", e.getMessage(), e);
         return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public Result<?> handleDuplicateKeyException(DuplicateKeyException e) {
+        log.error("数据重复: {}", e.getMessage(), e);
+        return Result.fail(400, "航班号已存在，请更换后再试");
     }
 
     @ExceptionHandler(Exception.class)

@@ -252,6 +252,7 @@ import { ElMessage } from 'element-plus'
 import { debounce } from 'lodash'
 import { aiApi } from '@/api'
 import AIPredictionCard from '@/components/ai/AIPredictionCard.vue'
+import { dateUtils } from '@/utils/date'
 
 const props = defineProps({
   formData: {
@@ -341,6 +342,17 @@ const rules = {
   ]
 }
 
+const getFirstValidateMessage = (error) => {
+  if (!error || typeof error !== 'object') return ''
+  const fields = Object.values(error)
+  for (const field of fields) {
+    if (Array.isArray(field) && field.length > 0 && field[0]?.message) {
+      return field[0].message
+    }
+  }
+  return ''
+}
+
 const debouncedSummarize = debounce(async () => {
   if (descriptionText.value.length < 10) {
     aiSummary.value = ''
@@ -385,6 +397,13 @@ const submit = async () => {
   if (!formRef.value) return false
 
   try {
+    if (formData.flightNumber) {
+      formData.flightNumber = formData.flightNumber.toUpperCase().trim()
+    }
+    if (!formData.airlineCode && formData.flightNumber?.length >= 2) {
+      formData.airlineCode = formData.flightNumber.slice(0, 2)
+    }
+
     await formRef.value.validate()
 
     submitting.value = true
@@ -399,7 +418,7 @@ const submit = async () => {
 
     timeFields.forEach(field => {
       if (formattedData[field] && formattedData[field] instanceof Date) {
-        formattedData[field] = formattedData[field].toISOString()
+        formattedData[field] = dateUtils.formatDate(formattedData[field], "yyyy-MM-dd'T'HH:mm:ss")
       }
     })
 
@@ -407,9 +426,8 @@ const submit = async () => {
     return formattedData
   } catch (error) {
     console.error('表单验证失败:', error)
-    if (error instanceof Error) {
-      ElMessage.error('表单验证失败')
-    }
+    const message = getFirstValidateMessage(error)
+    ElMessage.error(message || '表单验证失败')
     return false
   } finally {
     submitting.value = false

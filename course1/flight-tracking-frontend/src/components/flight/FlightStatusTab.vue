@@ -300,6 +300,12 @@ const loadRealTimeStatus = async () => {
     realTimeStatus.value = res.data || {}
     emit('update', res.data)
   } catch (error) {
+    if (error?.response?.status === 404) {
+      realTimeStatus.value = {}
+      emit('update', {})
+      ElMessage.warning('暂无实时状态数据')
+      return
+    }
     console.error('加载实时状态失败:', error)
   }
 }

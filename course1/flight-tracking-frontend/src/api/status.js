@@ -26,6 +26,13 @@ export const statusApi = {
       url: '/api/flight/status/active',
       method: 'get'
     })
+  },
+  saveOrUpdateStatus(data) {
+    return request({
+      url: '/api/flight/status',
+      method: 'post',
+      data
+    })
   }
 }
 
