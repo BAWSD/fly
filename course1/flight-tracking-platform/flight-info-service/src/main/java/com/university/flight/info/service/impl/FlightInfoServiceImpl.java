@@ -36,14 +36,32 @@ public class FlightInfoServiceImpl extends ServiceImpl<FlightInfoMapper, FlightI
 
     @Override
     public Page<FlightInfo> queryByCondition(String flightNumber, String departureAirport,
-                                             String arrivalAirport, LocalDateTime startTime,
-                                             LocalDateTime endTime, Integer pageNum, Integer pageSize) {
+                             String arrivalAirport, String airline,
+                             String status, LocalDateTime startTime,
+                             LocalDateTime endTime, Integer pageNum, Integer pageSize) {
         Page<FlightInfo> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<FlightInfo> wrapper = new LambdaQueryWrapper<>();
 
+        List<String> statusList = new ArrayList<>();
+        if (StringUtils.isNotBlank(status)) {
+            for (String item : status.split(",")) {
+            if (StringUtils.isNotBlank(item)) {
+                statusList.add(item.trim());
+            }
+            }
+        }
+
         wrapper.like(StringUtils.isNotBlank(flightNumber), FlightInfo::getFlightNumber, flightNumber)
-                .like(StringUtils.isNotBlank(departureAirport), FlightInfo::getDepartureAirportCode, departureAirport)
-                .like(StringUtils.isNotBlank(arrivalAirport), FlightInfo::getArrivalAirportCode, arrivalAirport)
+            .and(StringUtils.isNotBlank(departureAirport), w -> w.like(FlightInfo::getDepartureAirportCode, departureAirport)
+                .or()
+                .like(FlightInfo::getDepartureAirportName, departureAirport))
+            .and(StringUtils.isNotBlank(arrivalAirport), w -> w.like(FlightInfo::getArrivalAirportCode, arrivalAirport)
+                .or()
+                .like(FlightInfo::getArrivalAirportName, arrivalAirport))
+            .and(StringUtils.isNotBlank(airline), w -> w.like(FlightInfo::getAirlineCode, airline)
+                .or()
+                .like(FlightInfo::getAirlineName, airline))
+            .in(!CollectionUtils.isEmpty(statusList), FlightInfo::getFlightStatus, statusList)
                 .ge(startTime != null, FlightInfo::getPlannedDepartureTime, startTime)
                 .le(endTime != null, FlightInfo::getPlannedDepartureTime, endTime)
                 .orderByAsc(FlightInfo::getPlannedDepartureTime);

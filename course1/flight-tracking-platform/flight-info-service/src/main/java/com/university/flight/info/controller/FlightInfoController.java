@@ -38,16 +38,18 @@ public class FlightInfoController {
             @RequestParam(required = false) String flightNumber,
             @RequestParam(required = false) String departureAirport,
             @RequestParam(required = false) String arrivalAirport,
+            @RequestParam(required = false) String airline,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
             @RequestParam(defaultValue = "1") @Min(1) Integer pageNum,
             @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
 
-        log.info("查询航班列表: flightNumber={}, departureAirport={}, arrivalAirport={}, startTime={}, endTime={}, pageNum={}, pageSize={}",
-                flightNumber, departureAirport, arrivalAirport, startTime, endTime, pageNum, pageSize);
+        log.info("查询航班列表: flightNumber={}, departureAirport={}, arrivalAirport={}, airline={}, status={}, startTime={}, endTime={}, pageNum={}, pageSize={}",
+            flightNumber, departureAirport, arrivalAirport, airline, status, startTime, endTime, pageNum, pageSize);
 
         Page<FlightInfo> page = flightInfoService.queryByCondition(flightNumber, departureAirport,
-                arrivalAirport, startTime, endTime, pageNum, pageSize);
+            arrivalAirport, airline, status, startTime, endTime, pageNum, pageSize);
 
         return Result.success(page);
     }

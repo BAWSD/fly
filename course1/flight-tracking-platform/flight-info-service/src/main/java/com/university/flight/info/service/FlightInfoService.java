@@ -10,7 +10,8 @@ import java.util.Map;
 public interface FlightInfoService extends IService<FlightInfo> {
 
     Page<FlightInfo> queryByCondition(String flightNumber, String departureAirport,
-                                      String arrivalAirport, LocalDateTime startTime,
+                                      String arrivalAirport, String airline,
+                                      String status, LocalDateTime startTime,
                                       LocalDateTime endTime, Integer pageNum, Integer pageSize);
 
     FlightInfo getByFlightNumber(String flightNumber);

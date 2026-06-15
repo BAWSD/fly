@@ -6,7 +6,7 @@
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="航班号">
               <el-input
-                v-model="filterForm.flightNumber"
+                v-model.trim="filterForm.flightNumber"
                 placeholder="输入航班号"
                 clearable
                 @keyup.enter="handleSearch"
@@ -16,7 +16,7 @@
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="出发机场">
               <el-input
-                v-model="filterForm.departureAirport"
+                v-model.trim="filterForm.departureAirport"
                 placeholder="三字码或名称"
                 clearable
               />
@@ -25,7 +25,7 @@
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="到达机场">
               <el-input
-                v-model="filterForm.arrivalAirport"
+                v-model.trim="filterForm.arrivalAirport"
                 placeholder="三字码或名称"
                 clearable
               />
@@ -76,7 +76,7 @@
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="航空公司">
               <el-input
-                v-model="filterForm.airline"
+                v-model.trim="filterForm.airline"
                 placeholder="输入航空公司"
                 clearable
               />
@@ -101,8 +101,12 @@
         <div class="table-header">
           <div class="header-left">
             <span>航班列表</span>
+            <div class="header-hint">支持筛选、查看详情和快速新建航班</div>
           </div>
           <div class="header-actions">
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>新建航班
+            </el-button>
             <el-button @click="refreshData" :loading="loading">
               <el-icon><Refresh /></el-icon>刷新
             </el-button>
@@ -173,15 +177,43 @@
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="600px"
+      width="860px"
       destroy-on-close
+      align-center
     >
-      <FlightForm
-        v-if="dialogVisible"
-        ref="flightFormRef"
-        :form-data="currentFlight"
-        @success="handleFormSuccess"
-      />
+      <div class="create-panel">
+        <div class="create-panel__form">
+          <FlightForm
+            v-if="dialogVisible"
+            ref="flightFormRef"
+            :form-data="currentFlight"
+            @success="handleFormSuccess"
+          />
+        </div>
+        <div class="create-panel__side">
+          <el-card shadow="never" class="create-tip-card">
+            <template #header>
+              <span>新建提示</span>
+            </template>
+            <ul>
+              <li>航班号会自动转大写，并从前两位提取航空公司代码。</li>
+              <li>保存前会先检查航班号是否重复，避免无效提交。</li>
+              <li>保存成功后会同步写入实时状态，详情页可直接查看。</li>
+            </ul>
+          </el-card>
+
+          <el-card shadow="never" class="create-tip-card">
+            <template #header>
+              <span>推荐流程</span>
+            </template>
+            <ol>
+              <li>填写基础信息</li>
+              <li>选择状态与时间</li>
+              <li>点击“确认”完成创建</li>
+            </ol>
+          </el-card>
+        </div>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
@@ -247,10 +279,19 @@ const dialogTitle = computed(() => {
 const loadFlightData = async () => {
   loading.value = true
   try {
+    const normalizedStatus = Array.isArray(filterForm.status) && filterForm.status.length > 0
+      ? filterForm.status.join(',')
+      : undefined
     const params = {
       pageNum: pagination.current,
       pageSize: pagination.size,
-      ...filterForm
+      flightNumber: filterForm.flightNumber?.trim(),
+      departureAirport: filterForm.departureAirport?.trim(),
+      arrivalAirport: filterForm.arrivalAirport?.trim(),
+      airline: filterForm.airline?.trim(),
+      startTime: filterForm.startTime,
+      endTime: filterForm.endTime,
+      status: normalizedStatus
     }
 
     Object.keys(params).forEach(key => {
@@ -331,6 +372,13 @@ const handleSubmit = async () => {
     const payload = await flightFormRef.value.submit()
     if (!payload) return
 
+    const existingFlights = await flightApi.searchFlights(payload.flightNumber)
+    const duplicate = (existingFlights.data || []).find(item => item.flightNumber === payload.flightNumber)
+    if (!currentFlight.value?.flightNumber && duplicate) {
+      ElMessage.warning('该航班号已存在，请修改后再保存')
+      return
+    }
+
     if (currentFlight.value?.flightNumber) {
       await flightApi.updateFlight(currentFlight.value.flightNumber, payload)
     } else {
@@ -395,6 +443,12 @@ onMounted(() => {
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
+
+        .header-hint {
+          font-size: 12px;
+          color: #8c8c8c;
+          font-weight: 400;
+        }
       }
 
       span {
@@ -434,6 +488,41 @@ onMounted(() => {
       display: flex;
       justify-content: center;
       margin-top: 20px;
+    }
+  }
+
+  .create-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+    gap: 16px;
+    align-items: start;
+
+    .create-panel__form {
+      min-width: 0;
+    }
+
+    .create-panel__side {
+      display: grid;
+      gap: 16px;
+    }
+
+    .create-tip-card {
+      ul, ol {
+        margin: 0;
+        padding-left: 18px;
+        color: #666;
+        line-height: 1.8;
+      }
+
+      li + li {
+        margin-top: 4px;
+      }
+    }
+  }
+
+  @media (max-width: 960px) {
+    .create-panel {
+      grid-template-columns: 1fr;
     }
   }
 }
